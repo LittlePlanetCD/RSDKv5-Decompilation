@@ -180,7 +180,8 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
                     if (((engine.version == 5 && sceneInfo.state != ENGINESTATE_DEVMENU)
                          || (engine.version != 5 && RSDK::Legacy::gameMode != RSDK::Legacy::ENGINE_DEVMENU))
                         && devMenu.modsChanged) {
-                        engine.version = 0;
+                        int32 preVersion = engine.version;
+                        engine.version   = 0;
 #else
                     if (sceneInfo.state != ENGINESTATE_DEVMENU && devMenu.modsChanged) {
 #endif
@@ -194,8 +195,6 @@ int32 RSDK::RunRetroEngine(int32 argc, char *argv[])
 #endif
 
 #if RETRO_REV0U
-                        int32 preVersion = engine.version;
-
                         DetectEngineVersion();
                         if (!engine.version)
                             engine.version = preVersion;
@@ -1204,20 +1203,26 @@ void RSDK::InitGameLink()
 #endif
 
 #if RETRO_REV0U
-    RegisterObject((Object **)&DefaultObject, ":DefaultObject:", sizeof(EntityDefaultObject), sizeof(ObjectDefaultObject), DefaultObject_Update,
+    RegisterObject((Object **)&DefaultObject, ":DefaultObject:", sizeof(EntityBase), sizeof(ObjectDefaultObject), DefaultObject_Update,
                    DefaultObject_LateUpdate, DefaultObject_StaticUpdate, DefaultObject_Draw, DefaultObject_Create, DefaultObject_StageLoad,
-                   DefaultObject_EditorDraw, DefaultObject_EditorLoad, DefaultObject_Serialize, (void (*)(Object *))DefaultObject_StaticLoad);
+                   DefaultObject_EditorLoad, DefaultObject_EditorDraw, DefaultObject_Serialize, (void (*)(Object *))DefaultObject_StaticLoad);
 
-    RegisterObject((Object **)&DevOutput, ":DevOutput:", sizeof(EntityDevOutput), sizeof(ObjectDevOutput), DevOutput_Update, DevOutput_LateUpdate,
-                   DevOutput_StaticUpdate, DevOutput_Draw, DevOutput_Create, DevOutput_StageLoad, DevOutput_EditorDraw, DevOutput_EditorLoad,
+    RegisterObject((Object **)&DevOutput, ":DevOutput:", sizeof(EntityBase), sizeof(ObjectDevOutput), DevOutput_Update, DevOutput_LateUpdate,
+                   DevOutput_StaticUpdate, DevOutput_Draw, DevOutput_Create, DevOutput_StageLoad, DevOutput_EditorLoad, DevOutput_EditorDraw,
                    DevOutput_Serialize, (void (*)(Object *))DevOutput_StaticLoad);
 #else
+#if RETRO_REV01
     RegisterObject((Object **)&DefaultObject, ":DefaultObject:", sizeof(EntityDefaultObject), sizeof(ObjectDefaultObject), DefaultObject_Update,
                    DefaultObject_LateUpdate, DefaultObject_StaticUpdate, DefaultObject_Draw, DefaultObject_Create, DefaultObject_StageLoad,
-                   DefaultObject_EditorDraw, DefaultObject_EditorLoad, DefaultObject_Serialize);
+                  DefaultObject_EditorLoad, DefaultObject_EditorDraw, DefaultObject_Serialize);
+#else
+	RegisterObject((Object **)&DefaultObject, ":DefaultObject:", sizeof(EntityBase), sizeof(ObjectDefaultObject), DefaultObject_Update,
+                   DefaultObject_LateUpdate, DefaultObject_StaticUpdate, DefaultObject_Draw, DefaultObject_Create, DefaultObject_StageLoad,
+                   DefaultObject_EditorLoad, DefaultObject_EditorDraw, DefaultObject_Serialize);
+#endif			   
 #if RETRO_REV02
-    RegisterObject((Object **)&DevOutput, ":DevOutput:", sizeof(EntityDevOutput), sizeof(ObjectDevOutput), DevOutput_Update, DevOutput_LateUpdate,
-                   DevOutput_StaticUpdate, DevOutput_Draw, DevOutput_Create, DevOutput_StageLoad, DevOutput_EditorDraw, DevOutput_EditorLoad,
+    RegisterObject((Object **)&DevOutput, ":DevOutput:", sizeof(EntityBase), sizeof(ObjectDevOutput), DevOutput_Update, DevOutput_LateUpdate,
+                   DevOutput_StaticUpdate, DevOutput_Draw, DevOutput_Create, DevOutput_StageLoad, DevOutput_EditorLoad, DevOutput_EditorDraw,
                    DevOutput_Serialize);
 #endif
 #endif

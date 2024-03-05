@@ -29,6 +29,7 @@ inline void PrintConsole(const char *message) { printf("%s", message); }
 
 void RSDK::PrintLog(int32 mode, const char *message, ...)
 {
+	// add return to cancel out this func to allow the game to run.
 #ifndef RETRO_DISABLE_LOG
     if (engineDebugMode) {
         // make the full string

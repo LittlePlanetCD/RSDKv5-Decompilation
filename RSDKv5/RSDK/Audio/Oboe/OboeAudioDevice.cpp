@@ -103,6 +103,7 @@ void AudioDevice::FrameInit()
 
 void AudioDevice::HandleStreamLoad(ChannelInfo *channel, bool32 async)
 {
+	//comment out everything before the else here to allow Android 5.0.1 to load audio lol
     if (async) {
         pthread_t loadThread;
         pthread_create(&loadThread, NULL, LoadStreamASync, channel);
