@@ -926,8 +926,10 @@ uint16 RSDK::LoadSpriteSheet(const char *filename, uint8 scope)
             break;
     }
 
-    if (id >= SURFACE_COUNT)
+    if (id >= SURFACE_COUNT) {
+        PrintLog(PRINT_NORMAL, "Loading sheet %s , but there's no space for more sheets! \n", fullFilePath);
         return -1;
+    }
 
 
     GFXSurface *surface = &gfxSurface[id];
