@@ -7,12 +7,7 @@ using namespace RSDK;
 #endif
 
 #if RETRO_REV0U
-// Not sure why its 8.0 in v5U, it's 4.0 in v5 and v4, the "fix" is here since 8.0 causes issues with chibi due to his lil hitbox
-#if RETRO_USE_ORIGINAL_CODE
 #define COLLISION_OFFSET (TO_FIXED(8))
-#else
-#define COLLISION_OFFSET (TO_FIXED(4))
-#endif
 #else
 #define COLLISION_OFFSET (TO_FIXED(4))
 #endif
@@ -33,12 +28,7 @@ Entity *RSDK::collisionEntity = NULL;
 CollisionSensor RSDK::sensors[6];
 
 #if RETRO_REV0U
-#if RETRO_USE_ORIGINAL_CODE
-// not sure why it's 24 here... it was 14 in all prev RSDK versions, maybe a mistake???
 int32 RSDK::collisionMinimumDistance = TO_FIXED(24);
-#else
-int32 RSDK::collisionMinimumDistance = TO_FIXED(14);
-#endif
 
 uint8 RSDK::lowCollisionTolerance  = 8;
 uint8 RSDK::highCollisionTolerance = 14;
@@ -2098,7 +2088,7 @@ void RSDK::ProcessPathGrip()
 }
 
 void RSDK::SetPathGripSensors(CollisionSensor *sensors)
-{
+{   
     int32 offset = 0;
 #if RETRO_REV0U
     offset = useCollisionOffset ? COLLISION_OFFSET : 0;
@@ -2194,25 +2184,21 @@ void RSDK::FindFloorPosition(CollisionSensor *sensor)
             int32 colX       = posX - layer->position.x;
             int32 colY       = posY - layer->position.y;
             int32 cy         = (colY & -TILE_SIZE) - TILE_SIZE;
+            int32 my         = startY - layer->position.y;
             if (colX >= 0 && colX < TILE_SIZE * layer->xsize) {
                 for (int32 i = 0; i < 3; ++i) {
                     if (cy >= 0 && cy < TILE_SIZE * layer->ysize) {
                         uint16 tile = layer->layout[(colX / TILE_SIZE) + ((cy / TILE_SIZE) << layer->widthShift)];
-
-                        if (tile < 0xFFFF && tile & solid) {
+                        if (tile != 0xFFFF && tile & solid) {
                             int32 mask      = collisionMasks[collisionEntity->collisionPlane][tile & 0xFFF].floorMasks[colX & 0xF];
                             int32 ty        = cy + mask;
                             int32 tileAngle = tileInfo[collisionEntity->collisionPlane][tile & 0xFFF].floorAngle;
 
-                            if (mask < 0xFF) {
-                                if (!sensor->collided || startY >= ty) {
+                            if (mask != 0xFF) {
+                                if (!sensor->collided || my >= ty) {
                                     if (abs(colY - ty) <= collisionTolerance) {
 #if RETRO_REV0U
-#if !RETRO_USE_ORIGINAL_CODE
-                                        if (abs(sensor->angle - tileAngle) <= TILE_SIZE * 2 // * 3 causes some issues in certain tiles
-#else
                                         if (abs(sensor->angle - tileAngle) <= TILE_SIZE * 3
-#endif
                                             || abs(sensor->angle - tileAngle + 0x100) <= floorAngleTolerance
                                             || abs(sensor->angle - tileAngle - 0x100) <= floorAngleTolerance) {
 #else
@@ -2222,7 +2208,7 @@ void RSDK::FindFloorPosition(CollisionSensor *sensor)
                                             sensor->collided   = true;
                                             sensor->angle      = tileAngle;
                                             sensor->position.y = TO_FIXED(ty + layer->position.y);
-                                            startY             = ty;
+                                            my                 = ty;
                                             i                  = 3;
                                         }
                                     }
@@ -2230,13 +2216,13 @@ void RSDK::FindFloorPosition(CollisionSensor *sensor)
                             }
                         }
                     }
-
                     cy += TILE_SIZE;
                 }
             }
 
-            posX = layer->position.x + colX;
-            posY = layer->position.y + colY;
+            posX   = layer->position.x + colX;
+            posY   = layer->position.y + colY;
+            startY = layer->position.y + my;
         }
     }
 }
