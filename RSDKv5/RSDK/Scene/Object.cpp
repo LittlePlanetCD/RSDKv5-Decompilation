@@ -80,8 +80,8 @@ void RSDK::RegisterObject(Object **staticVars, const char *name, uint32 entityCl
         classInfo->draw            = draw;
         classInfo->create          = create;
         classInfo->stageLoad       = stageLoad;
-        classInfo->editorDraw      = editorDraw;
         classInfo->editorLoad      = editorLoad;
+        classInfo->editorDraw      = editorDraw;
         classInfo->serialize       = serialize;
 #if RETRO_REV0U
         classInfo->staticLoad = staticLoad;

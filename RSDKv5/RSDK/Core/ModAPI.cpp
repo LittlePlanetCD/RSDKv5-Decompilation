@@ -1617,14 +1617,14 @@ void SuperInternal(RSDK::ObjectClass *super, RSDK::ModSuper callback, void *data
                 super->stageLoad();
             break;
 
-        case SUPER_EDITORDRAW:
-            if (super->editorDraw)
-                super->editorDraw();
-            break;
-
         case SUPER_EDITORLOAD:
             if (super->editorLoad)
                 super->editorLoad();
+            break;
+
+        case SUPER_EDITORDRAW:
+            if (super->editorDraw)
+                super->editorDraw();
             break;
 
         case SUPER_SERIALIZE:
