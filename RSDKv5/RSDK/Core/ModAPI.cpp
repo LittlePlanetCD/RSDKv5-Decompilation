@@ -1849,7 +1849,7 @@ int32 RSDK::GetAchievementIndexByID(const char *id)
 int32 RSDK::GetAchievementCount() { return (int32)achievementList.size(); }
 
 #if RETRO_REV0U
-void RSDK::StateMachineRun(void (*state)(void*), void* data)
+void RSDK::StateMachineRun(void (*state)(void), void* data)
 {
     bool32 skipState = false;
 
