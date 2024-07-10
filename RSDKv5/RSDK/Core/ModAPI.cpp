@@ -1867,7 +1867,7 @@ void RSDK::StateMachineRun(void (*state)(void*), void* data)
     }
 }
 
-bool32 RSDK::HandleRunState_HighPriority(void *state, void *data)
+bool32 RSDK::HandleRunState_HighPriority(void (*state)(void), void *data)
 {
     bool32 skipState = false;
 
@@ -1879,7 +1879,7 @@ bool32 RSDK::HandleRunState_HighPriority(void *state, void *data)
     return skipState;
 }
 
-void RSDK::HandleRunState_LowPriority(void *state, void *data, bool32 skipState)
+void RSDK::HandleRunState_LowPriority(void (*state)(void), void *data, bool32 skipState)
 {
     for (int32 h = 0; h < (int32)stateHookList.size(); ++h) {
         if (!stateHookList[h].priority && stateHookList[h].state == state && stateHookList[h].hook)
@@ -1900,7 +1900,7 @@ void RSDK::RegisterStateHook(void (*state)(void *), bool32 (*hook)(bool32 skippe
     stateHookList.push_back(stateHook);
 }
 #else
-void RSDK::StateMachineRun(void (*state)())
+void RSDK::StateMachineRun(void (*state)(void))
 {
     bool32 skipState = false;
 
@@ -1918,7 +1918,7 @@ void RSDK::StateMachineRun(void (*state)())
     }
 }
 
-bool32 RSDK::HandleRunState_HighPriority(void *state)
+bool32 RSDK::HandleRunState_HighPriority(void (*state)(void))
 {
     bool32 skipState = false;
 
@@ -1930,7 +1930,7 @@ bool32 RSDK::HandleRunState_HighPriority(void *state)
     return skipState;
 }
 
-void RSDK::HandleRunState_LowPriority(void *state, bool32 skipState)
+void RSDK::HandleRunState_LowPriority(void (*state)(void), bool32 skipState)
 {
     for (int32 h = 0; h < (int32)stateHookList.size(); ++h) {
         if (!stateHookList[h].priority && stateHookList[h].state == state && stateHookList[h].hook)
@@ -1938,7 +1938,7 @@ void RSDK::HandleRunState_LowPriority(void *state, bool32 skipState)
     }
 }
 
-void RSDK::RegisterStateHook(void (*state)(), bool32 (*hook)(bool32 skippedState), bool32 priority)
+void RSDK::RegisterStateHook(void (*state)(void), bool32 (*hook)(bool32 skippedState), bool32 priority)
 {
     if (!state)
         return;
