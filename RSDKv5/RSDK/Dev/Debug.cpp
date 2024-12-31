@@ -1528,18 +1528,6 @@ void RSDK::DevMenu_KeyMappingsMenu()
 
         default: break;
     }
-
-#if !RETRO_USE_ORIGINAL_CODE
-#if RETRO_REV02
-    bool32 swap = SKU::userCore->GetConfirmButtonFlip();
-#else
-    bool32 swap = SKU::GetConfirmButtonFlip();
-#endif
-    if (swap ? controller[CONT_ANY].keyA.press : controller[CONT_ANY].keyB.press) {
-        devMenu.state     = DevMenu_OptionsMenu;
-        devMenu.selection = 3;
-    }
-#endif
 }
 #if RETRO_REV02
 void RSDK::DevMenu_DebugOptionsMenu()
@@ -1807,7 +1795,7 @@ void RSDK::DevMenu_DebugOptionsMenu()
     else {
         if (confirm) {
             devMenu.state     = DevMenu_OptionsMenu;
-            devMenu.selection = 4;
+            devMenu.selection = 3;
         }
     }
 
@@ -1819,7 +1807,7 @@ void RSDK::DevMenu_DebugOptionsMenu()
 #endif
     if (swap ? controller[CONT_ANY].keyA.press : controller[CONT_ANY].keyB.press) {
         devMenu.state     = DevMenu_OptionsMenu;
-        devMenu.selection = 4;
+        devMenu.selection = 3;
     }
 #endif
 }
