@@ -84,6 +84,9 @@ uint16 RSDK::LoadSpriteAnimation(const char *filePath, uint8 scope)
             animation->loopIndex       = ReadInt8(&info);
             animation->rotationStyle   = ReadInt8(&info);
 
+            if (animation->frameListOffset + animation->loopIndex >= frameCount)
+                animation->loopIndex = animation->frameCount - 1;
+
             for (int32 f = 0; f < animation->frameCount; ++f) {
                 SpriteFrame *frame = &spr->frames[frameID++];
 
