@@ -14,7 +14,7 @@ std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 
 using namespace RSDK;
 
-bool32 RSDK::engineDebugMode = true;
+bool32 RSDK::engineDebugMode = false;
 bool32 RSDK::useEndLine      = true;
 char RSDK::outputString[0x400];
 

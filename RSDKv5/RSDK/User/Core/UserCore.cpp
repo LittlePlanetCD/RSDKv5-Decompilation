@@ -314,6 +314,7 @@ void RSDK::LoadSettingsINI()
             engine.devMenu = iniparser_getboolean(ini, "Game:devMenu", false);
 
 #if !RETRO_USE_ORIGINAL_CODE
+        engineDebugMode = iniparser_getboolean(ini, "Game:engineDebugMode", false);
         customSettings.region = iniparser_getint(ini, "Game:region", -1);
         // customSettings.confirmButtonFlip        = iniparser_getboolean(ini, "Game:confirmButtonFlip", false);
         // customSettings.xyButtonFlip             = iniparser_getboolean(ini, "Game:xyButtonFlip", false);
@@ -508,6 +509,7 @@ void RSDK::LoadSettingsINI()
         engine.devMenu        = false;
 
 #if !RETRO_USE_ORIGINAL_CODE
+        engineDebugMode = false;
         customSettings.region                    = -1;
         customSettings.confirmButtonFlip         = false;
         customSettings.xyButtonFlip              = false;
@@ -603,7 +605,9 @@ void RSDK::SaveSettingsINI(bool32 writeToFile)
 
             if (engine.devMenu)
                 WriteText(file, "enableControllerDebugging=%s\n", (customSettings.enableControllerDebugging ? "y" : "n"));
-
+			
+            WriteText(file, "engineDebugMode=%s\n", (engineDebugMode ? "y" : "n"));
+			
             WriteText(file, "; Determines if the engine should pause when window focus is lost or not\n");
             WriteText(file, "disableFocusPause=%s\n", (customSettings.disableFocusPause ? "y" : "n"));
 
