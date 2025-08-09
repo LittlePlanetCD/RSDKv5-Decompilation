@@ -1202,7 +1202,6 @@ void RSDK::InitGameLink()
     editableVarCount = 0;
     foreachStackPtr  = foreachStackList;
     currentMod       = NULL;
-    UnHookPublicFunctions();
 #endif
 
 #if RETRO_REV0U
