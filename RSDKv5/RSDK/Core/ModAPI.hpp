@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <regex>
 #include "tinyxml2.h"
-#include <unordered_map>
 #include <functional>
 #endif
 
