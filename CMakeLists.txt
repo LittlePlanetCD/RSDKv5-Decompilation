@@ -8,7 +8,7 @@ set(RETRO_REVISION 3 CACHE STRING "What revision to compile for. Defaults to v5U
 option(RETRO_DISABLE_PLUS "Disable plus. Should be set on for any public releases." OFF)
 
 option(RETRO_MOD_LOADER "Enables or disables the mod loader." ON)
-set(RETRO_MOD_LOADER_VER 3 CACHE STRING "Sets the mod loader version. Defaults to latest")
+set(RETRO_MOD_LOADER_VER 2 CACHE STRING "Sets the mod loader version. Defaults to latest")
 option(RETRO_MOD_LOADER_HOOK "Enable hook functionality in the mod loader. Defaults to OFF unless supported" OFF)
 
 option(RETRO_DISABLE_LOG "Disables the log. Defaults to OFF." OFF)
@@ -188,4 +188,19 @@ if(WITH_RSDK)
         MANIA_FIRST_RELEASE=$<BOOL:${MANIA_FIRST_RELEASE}>
         GAME_VERSION=${GAME_VERSION}
     )
+endif()
+
+# MSVC likes to merge similar functions together even though their addresses are being referenced.
+# Disable COMDAT folding to fix some bugs.
+if(MSVC)
+    target_link_options(RetroEngine PRIVATE /OPT:NOICF)
+endif()
+
+# Prevent function inlining
+if(RETRO_MOD_LOADER)
+    if(MSVC)
+        target_compile_options(RetroEngine PRIVATE /Ob0)
+    else() # GCC/Clang
+        target_compile_options(RetroEngine PRIVATE -fno-inline)
+    endif()
 endif()
