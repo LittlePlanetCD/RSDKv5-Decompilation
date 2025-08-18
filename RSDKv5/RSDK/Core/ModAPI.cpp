@@ -16,6 +16,7 @@ using namespace RSDK;
 #endif
 #endif
 
+#include <algorithm>
 #include <filesystem>
 #include <stdexcept>
 #include <functional>
@@ -67,7 +68,7 @@ char RSDK::customUserFileDir[0x100];
 
 RSDK::ModInfo *RSDK::currentMod;
 
-std::vector<RSDK::ModPublicFunctionInfo> gamePublicFuncs;
+std::vector<RSDK::ModPublicFunctionInfo> RSDK::gamePublicFuncs;
 
 void *RSDK::modFunctionTable[RSDK::ModTable_Count];
 
@@ -1062,9 +1063,11 @@ void RSDK::AddPublicFunction(const char *functionName, void *functionPtr)
 void *RSDK::GetPublicFunction(const char *id, const char *functionName)
 {
     if (!id) {
-        for (auto &f : gamePublicFuncs) {
-            if (f.name == functionName)
-                return f.ptr;
+        auto it = std::lower_bound(gamePublicFuncs.begin(), gamePublicFuncs.end(), functionName,
+                                   [](const auto &f, std::string_view funcName) { return f.name < funcName; });
+
+        if (it != gamePublicFuncs.end() && it->name == functionName) {
+            return it->ptr;
         }
 
         return NULL;
@@ -1075,9 +1078,11 @@ void *RSDK::GetPublicFunction(const char *id, const char *functionName)
 
     for (ModInfo &m : modList) {
         if (m.active && m.id == id) {
-            for (auto &f : m.functionList) {
-                if (f.name == functionName)
-                    return f.ptr;
+            auto it = std::lower_bound(m.functionList.begin(), m.functionList.end(), functionName,
+                                       [](const auto &f, std::string_view funcName) { return f.name < funcName; });
+
+            if (it != m.functionList.end() && it->name == functionName) {
+                return it->ptr;
             }
 
             return NULL;
@@ -1085,6 +1090,11 @@ void *RSDK::GetPublicFunction(const char *id, const char *functionName)
     }
 
     return NULL;
+}
+
+void RSDK::SortPublicFunctions(std::vector<ModPublicFunctionInfo> &funcList)
+{
+    std::sort(funcList.begin(), funcList.end(), [](const ModPublicFunctionInfo &a, const ModPublicFunctionInfo &b) { return a.name < b.name; });
 }
 
 std::string GetModPath_i(const char *id)
