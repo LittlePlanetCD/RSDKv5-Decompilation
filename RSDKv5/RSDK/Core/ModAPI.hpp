@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <stack>
 #include <unordered_map>
 #include <regex>
 #include "tinyxml2.h"
@@ -243,7 +244,7 @@ struct PublicFunctionHook {
     void **ogFunc;   // Patched original function (with Detours, this one is needed for Detach)
     void *hookFunc; // The user defined hook function
 };
-extern std::unordered_map<void *, PublicFunctionHook> modPublicFunctionHooks;
+extern std::unordered_map<void *, std::stack<PublicFunctionHook>> modPublicFunctionHooks;
 #endif
 
 inline void SetActiveMod(int32 id) { modSettings.activeMod = id; }
@@ -436,7 +437,7 @@ bool32 GetGroupEntities(uint16 group, void **entity);
 #endif
 
 #if RETRO_MOD_LOADER_VER >= 3
-void HookPublicFunction(const char *functionName, void *functionPtr, void **originalPtr);
+void HookPublicFunction(const char *id, const char *functionName, void *functionPtr, void **originalPtr);
 void UnHookPublicFunctions();
 #endif
 
