@@ -142,7 +142,19 @@ enum ModFunctionTableIDs {
 #endif
 
 #if RETRO_MOD_LOADER_VER >= 3
+    // Mod hooks (Public Functions override)
     ModTable_HookPublicFunction,
+
+    // Platform info
+    ModTable_GetRetroPlatform,
+
+    // IO
+    ModTable_IOOpen,
+    ModTable_IORead,
+    ModTable_IOSeek,
+    ModTable_IOTell,
+    ModTable_IOClose,
+    ModTable_IOWrite,
 #endif
 
     ModTable_Count
@@ -437,8 +449,21 @@ bool32 GetGroupEntities(uint16 group, void **entity);
 #endif
 
 #if RETRO_MOD_LOADER_VER >= 3
+// Mod hooks (Public Functions override)
 void HookPublicFunction(const char *id, const char *functionName, void *functionPtr, void **originalPtr);
 void UnHookPublicFunctions();
+
+// Platform info
+inline int32 GetRetroPlatform(void) { return RETRO_PLATFORM; }
+
+// IO
+typedef FileIO* IOHandle;
+IOHandle IOOpen(const char *filename, const char *mode);
+uint32 IORead(void *buffer, uint32 elementSize, uint32 elementCount, IOHandle file);
+int32 IOSeek(IOHandle file, int32 offset, int32 whence);
+int32 IOTell(IOHandle file);
+int32 IOClose(IOHandle file);
+uint32 IOWrite(const void *buffer, uint32 elementSize, uint32 elementCount, IOHandle file);
 #endif
 
 #endif
