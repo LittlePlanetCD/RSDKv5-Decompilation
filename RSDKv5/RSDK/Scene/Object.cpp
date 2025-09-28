@@ -314,6 +314,10 @@ void RSDK::InitObjects()
     sceneInfo.createSlot = ENTITY_COUNT - 0x100;
     cameraCount          = 0;
 
+#if RETRO_USE_MOD_LOADER && RETRO_MOD_LOADER_VER >= 3
+    RunModCallbacks(MODCB_BEFORESTAGELOAD, NULL);
+#endif
+
     for (int32 o = 0; o < sceneInfo.classCount; ++o) {
 #if RETRO_USE_MOD_LOADER
         currentObjectID = o;
@@ -347,6 +351,10 @@ void RSDK::InitObjects()
 void RSDK::ProcessObjects()
 {
     for (int32 i = 0; i < DRAWGROUP_COUNT; ++i) drawGroups[i].entityCount = 0;
+
+#if RETRO_USE_MOD_LOADER && RETRO_MOD_LOADER_VER >= 3
+    RunModCallbacks(MODCB_BEFORESTATICUPDATE, INT_TO_VOID(ENGINESTATE_REGULAR));
+#endif
 
     for (int32 o = 0; o < sceneInfo.classCount; ++o) {
 #if RETRO_USE_MOD_LOADER
@@ -507,6 +515,10 @@ void RSDK::ProcessPausedObjects()
 {
     for (int32 i = 0; i < DRAWGROUP_COUNT; ++i) drawGroups[i].entityCount = 0;
 
+#if RETRO_USE_MOD_LOADER && RETRO_MOD_LOADER_VER >= 3
+    RunModCallbacks(MODCB_BEFORESTATICUPDATE, INT_TO_VOID(ENGINESTATE_PAUSED));
+#endif
+
     for (int32 o = 0; o < sceneInfo.classCount; ++o) {
 #if RETRO_USE_MOD_LOADER
         currentObjectID = o;
@@ -567,6 +579,10 @@ void RSDK::ProcessPausedObjects()
 void RSDK::ProcessFrozenObjects()
 {
     for (int32 i = 0; i < DRAWGROUP_COUNT; ++i) drawGroups[i].entityCount = 0;
+
+#if RETRO_USE_MOD_LOADER && RETRO_MOD_LOADER_VER >= 3
+    RunModCallbacks(MODCB_BEFORESTATICUPDATE, INT_TO_VOID(ENGINESTATE_FROZEN));
+#endif
 
     for (int32 o = 0; o < sceneInfo.classCount; ++o) {
 #if RETRO_USE_MOD_LOADER

@@ -21,6 +21,10 @@ char RSDK::currentSceneID[0x10];
 
 SceneInfo RSDK::sceneInfo;
 
+#if RETRO_USE_MOD_LOADER && RETRO_MOD_LOADER_VER >= 3
+int32 RSDK::playerListPos = -1;
+#endif
+
 void RSDK::LoadSceneFolder()
 {
 #if RETRO_PLATFORM == RETRO_ANDROID
@@ -211,7 +215,6 @@ void RSDK::LoadSceneFolder()
                     objClass->staticLoad(*objClass->staticVars);
                 else
                     LoadStaticVariables((uint8 *)*objClass->staticVars, objClass->hash, sizeof(Object));
-
 #else
                 LoadStaticVariables((uint8 *)*objClass->staticVars, objClass->hash, sizeof(Object));
 #endif
