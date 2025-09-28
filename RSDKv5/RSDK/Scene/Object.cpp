@@ -65,6 +65,8 @@ void RSDK::RegisterObject(Object **staticVars, const char *name, uint32 entityCl
 #endif
 #endif
 {
+	//PrintLog(PRINT_NORMAL, "Object %s at %x, with a entity size of 0x%x and static size of 0x%x.", name, staticVars, entityClassSize, staticClassSize);
+	//PrintLog(PRINT_NORMAL, "Object %s Update, LateUpdate, StaticUpdate, Draw, Create, StageLoad, EditorDraw, EditorLoad, serialize are located at 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x", name, update, lateUpdate, staticUpdate, draw, create, stageLoad, editorDraw, editorLoad, serialize);
     if (objectClassCount < OBJECT_COUNT) {
         if (entityClassSize > sizeof(EntityBase))
             PrintLog(PRINT_NORMAL, "Class exceeds max entity memory: %s", name);
