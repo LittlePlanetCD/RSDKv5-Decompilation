@@ -536,7 +536,11 @@ void RSDK::Legacy::v4::LoadXMLPlayers(const tinyxml2::XMLElement *gameElement)
             if (nameAttr)
                 plrName = nameAttr->Value();
 
+#if RETRO_MOD_LOADER_VER <= 2
+            StrCopy(modSettings.playerNames[modSettings.playerCount++], plrName);
+#else
             AddDevMenuCharacter(plrName, modSettings.playerCount);
+#endif
         }
     }
 }
