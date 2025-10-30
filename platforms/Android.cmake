@@ -31,7 +31,7 @@ target_link_libraries(RetroEngine
 target_link_options(RetroEngine PRIVATE -u GameActivity_onCreate)
 
 # Build dobby library and link statically
-if(RETRO_MOD_LOADER)
+if(RETRO_MOD_LOADER AND RETRO_MOD_LOADER_VER GREATER_EQUAL 3)
     add_subdirectory(dependencies/all/Dobby)
     target_include_directories(RetroEngine PRIVATE dependencies/all/Dobby/include)
     target_link_libraries(RetroEngine dobby_static)
