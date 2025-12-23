@@ -242,6 +242,9 @@ void RSDK::InitModAPI(bool32 getVersion)
     // Dev Menu Characters
     ADD_MOD_FUNCTION(ModTable_AddDevMenuCharacter, AddDevMenuCharacter);
     ADD_MOD_FUNCTION(ModTable_GetActiveDevMenuCharacter, GetActiveDevMenuCharacter);
+
+    // Mod Menu
+    ADD_MOD_FUNCTION(ModTable_OpenModMenu, OpenModMenu);
 #endif
 
     superLevels.clear();
@@ -490,6 +493,10 @@ void RSDK::UnloadMods()
 #if RETRO_MOD_LOADER_VER >= 3
     UnHookPublicFunctions();
 #endif
+<<<<<<< HEAD
+=======
+
+>>>>>>> main/modapi-v3
     for (ModInfo &mod : modList) {
         if (mod.unloadMod)
             mod.unloadMod();

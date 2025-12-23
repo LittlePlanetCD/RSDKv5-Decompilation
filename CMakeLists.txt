@@ -8,7 +8,7 @@ set(RETRO_REVISION 3 CACHE STRING "What revision to compile for. Defaults to v5U
 option(RETRO_DISABLE_PLUS "Disable plus. Should be set on for any public releases." OFF)
 
 option(RETRO_MOD_LOADER "Enables or disables the mod loader." ON)
-set(RETRO_MOD_LOADER_VER 2 CACHE STRING "Sets the mod loader version. Defaults to latest")
+set(RETRO_MOD_LOADER_VER 3 CACHE STRING "Sets the mod loader version. Defaults to latest")
 option(RETRO_MOD_LOADER_HOOK "Enable hook functionality in the mod loader. Defaults to OFF unless supported" OFF)
 
 option(RETRO_DISABLE_LOG "Disables the log. Defaults to OFF." OFF)
@@ -163,7 +163,7 @@ target_compile_definitions(RetroEngine PRIVATE
 
     RSDK_AUTOBUILD=$<BOOL:${RETRO_DISABLE_PLUS}>
     RETRO_DISABLE_LOG=$<BOOL:${RETRO_DISABLE_LOG}>
-    
+
     RETRO_DEV_EXTRA="${RETRO_SUBSYSTEM} - ${DECOMP_VERSION}"
 )
 

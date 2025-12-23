@@ -177,6 +177,9 @@ enum ModFunctionTableIDs {
     // Dev Menu Characters
     ModTable_AddDevMenuCharacter,
     ModTable_GetActiveDevMenuCharacter,
+
+    // Mod Menu
+    ModTable_OpenModMenu,
 #endif
 
     ModTable_Count
