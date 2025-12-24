@@ -493,10 +493,6 @@ void RSDK::UnloadMods()
 #if RETRO_MOD_LOADER_VER >= 3
     UnHookPublicFunctions();
 #endif
-<<<<<<< HEAD
-=======
-
->>>>>>> main/modapi-v3
     for (ModInfo &mod : modList) {
         if (mod.unloadMod)
             mod.unloadMod();
