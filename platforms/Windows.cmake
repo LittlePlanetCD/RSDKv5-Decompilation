@@ -125,7 +125,7 @@ endif()
 target_sources(RetroEngine PRIVATE ${RETRO_NAME}/${RETRO_NAME}.rc)
 
 # Setup Detours
-if(RETRO_MOD_LOADER)
+if(RETRO_MOD_LOADER AND RETRO_MOD_LOADER_VER GREATER_EQUAL 3)
     find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
     find_library(DETOURS_LIBRARY detours REQUIRED)
     target_include_directories(RetroEngine PRIVATE ${DETOURS_INCLUDE_DIRS})
