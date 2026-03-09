@@ -13,7 +13,7 @@
 #if RETRO_PLATFORM == RETRO_SWITCH
 #define _GLVERSION "#version 330 core\n#define in_V in\n#define in_F in\n"
 
-#define _glFOutVec ""
+#define _GLFOUTVEC ""
 
 #define _glVPrecision ""
 #define _glFPrecision ""
@@ -29,7 +29,8 @@
 
 char _GLVERSION[128];
 
-#define _glFOutVec "#define gl_FragColor out_FragColor\nout vec4 out_FragColor;\n"
+#define _GLFOUTVEC3 "#define gl_FragColor out_FragColor\nout vec4 out_FragColor;\n"
+char _GLFOUTVEC[64];
 
 #define GL_BGRA                     GL_RGBA
 #define GL_UNSIGNED_INT_8_8_8_8_REV GL_UNSIGNED_BYTE
@@ -219,19 +220,24 @@ bool RenderDevice::SetupRendering()
             return false;
     }
 
+    int32 contextVersion = 0;
     eglMakeCurrent(display, surface, surface, context);
-    eglQueryContext(display, context, EGL_CONTEXT_CLIENT_VERSION, &i);
-    PrintLog(PRINT_NORMAL, "[EGL] Context client version: %d", i);
+    eglQueryContext(display, context, EGL_CONTEXT_CLIENT_VERSION, &contextVersion);
+    PrintLog(PRINT_NORMAL, "[EGL] Context client version: %d", contextVersion);
 
 #if RETRO_PLATFORM == RETRO_ANDROID
     // Grab preprocessor info for the picked GLES version
-    if (i == 3) {
+    if (contextVersion == 3) {
         strcpy(_GLVERSION, _GLVERSION3);
-    } else if (i == 2) {
+        strcpy(_GLFOUTVEC, _GLFOUTVEC3);
+    } else if (contextVersion == 2) {
         strcpy(_GLVERSION, _GLVERSION2);
+        // No need for out vec, we use gl_FragColor
+        _GLFOUTVEC[0] = '\0';
     } else {
         // Shouldn't happen but let's be safe
         PrintLog(PRINT_NORMAL, "[EGL] Unsupported GLES version");
+        return false;
     }
 #endif
 
@@ -870,7 +876,7 @@ bool RenderDevice::InitShaders()
         glShaderSource(vert, sizeof(vchar)/sizeof(*vchar), vchar, NULL);
         glCompileShader(vert);
 
-        const GLchar *fchar[] = { _GLVERSION, _GLDEFINE, _glFPrecision, _glFOutVec, backupFragment };
+        const GLchar *fchar[] = { _GLVERSION, _GLDEFINE, _glFPrecision, _GLFOUTVEC, backupFragment };
         frag                  = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(frag, sizeof(fchar)/sizeof(*fchar), fchar, NULL);
         glCompileShader(frag);
@@ -964,7 +970,7 @@ void RenderDevice::LoadShader(const char *fileName, bool32 linear)
         fileData[info.fileSize] = 0;
         CloseFile(&info);
 
-        const GLchar *glchar[] = { _GLVERSION, _GLDEFINE, _glFPrecision, _glFOutVec, (const GLchar *)fileData };
+        const GLchar *glchar[] = { _GLVERSION, _GLDEFINE, _glFPrecision, _GLFOUTVEC, (const GLchar *)fileData };
         frag                   = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(frag, sizeof(glchar)/sizeof(*glchar), glchar, NULL);
         glCompileShader(frag);
