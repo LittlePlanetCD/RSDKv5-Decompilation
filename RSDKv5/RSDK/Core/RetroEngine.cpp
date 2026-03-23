@@ -1291,6 +1291,9 @@ void RSDK::InitGameLink()
     info.unknown = &SKU::unknownInfo;
 
     info.screenInfo = screens;
+#if RETRO_REV0U
+    info.hedgehogLink = HEBridgeFunctionTable;
+#endif
 
 #if RETRO_USE_MOD_LOADER
     info.modTable = modFunctionTable;
