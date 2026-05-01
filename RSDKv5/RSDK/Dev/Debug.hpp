@@ -138,7 +138,7 @@ void DevMenu_DebugOptionsMenu();
 #if RETRO_USE_MOD_LOADER
 void DevMenu_ModsMenu();
 #endif
-#if RETRO_REV0U && RETRO_USE_MOD_LOADER
+#if RETRO_USE_MOD_LOADER && (RETRO_REV0U || RETRO_MOD_LOADER_VER >= 3)
 void DevMenu_PlayerSelectMenu();
 #endif
 

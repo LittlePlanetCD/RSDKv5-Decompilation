@@ -2298,7 +2298,11 @@ void RSDK::AddDevMenuCharacter(const char *playerName, int32 id)
         return;
     }
 
+#if RETRO_REV0U
     StrCopy(modSettings.players[modSettings.playerCount].name, playerName);
+#else
+    strcpy(modSettings.players[modSettings.playerCount].name, playerName);
+#endif
     modSettings.players[modSettings.playerCount].id = id;
     modSettings.playerCount++;
 }
