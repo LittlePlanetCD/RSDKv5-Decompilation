@@ -95,7 +95,7 @@ if(NOT RETRO_SUBSYSTEM STREQUAL SDL2)
 endif()
 
 # Build dobby library and link statically
-if(RETRO_MOD_LOADER)
+if(RETRO_MOD_LOADER AND RETRO_MOD_LOADER_VER GREATER_EQUAL 3)
     add_subdirectory(dependencies/all/Dobby)
     target_include_directories(RetroEngine PRIVATE dependencies/all/Dobby/include)
     target_link_libraries(RetroEngine dobby_static)
