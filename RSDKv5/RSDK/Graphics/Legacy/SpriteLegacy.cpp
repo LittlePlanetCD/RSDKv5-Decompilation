@@ -18,7 +18,10 @@ int32 RSDK::Legacy::AddGraphicsFile(const char *filePath)
     if (image.Load(sheetPath, true)) {
         GFXSurface *surface = &gfxSurface[sheetID];
 
-        StrCopy(surface->fileName, sheetPath);
+        // NOTE: Unlike v3/v4, v5U copies the base file path instead of the full path ("Data/Sprites/<filePath>").
+        // This change ends up aligning the first parameter of LoadSpriteSheet with RemoveSpriteSheet's, while
+        // v3/v4 required the full path with "Data/Sprites/" prefix for RemoveSpriteSheet to work.
+        StrCopy(surface->fileName, filePath);
         surface->width  = image.width;
         surface->height = image.height;
 
