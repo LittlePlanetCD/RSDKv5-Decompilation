@@ -64,22 +64,63 @@ extern CollisionSensor sensors[6];
 #if RETRO_REV0U
 extern int32 collisionMinimumDistance;
 
-extern uint8 lowCollisionTolerance;
-extern uint8 highCollisionTolerance;
+extern int32 lowCollisionTolerance;
+extern int32 highCollisionTolerance;
 
 extern uint8 floorAngleTolerance;
 extern uint8 wallAngleTolerance;
 extern uint8 roofAngleTolerance;
 
-inline void SetupCollisionConfig(int32 minDistance, uint8 lowTolerance, uint8 highTolerance, uint8 floorAngleTolerance, uint8 wallAngleTolerance,
+inline void SetupCollisionConfig(uint8 minDistance, uint8 lowTolerance, uint8 highTolerance, uint8 floorAngleTolerance, uint8 wallAngleTolerance,
                                  uint8 roofAngleTolerance)
 {
-    collisionMinimumDistance = TO_FIXED(minDistance);
-    lowCollisionTolerance    = lowTolerance; 
-    highCollisionTolerance   = highTolerance;
-    RSDK::floorAngleTolerance    = floorAngleTolerance;
-    RSDK::wallAngleTolerance     = wallAngleTolerance;
-    RSDK::roofAngleTolerance     = roofAngleTolerance;
+    RSDK::collisionMinimumDistance = TO_FIXED(minDistance);
+    RSDK::lowCollisionTolerance    = lowTolerance;
+    RSDK::highCollisionTolerance   = highTolerance;
+    RSDK::floorAngleTolerance      = floorAngleTolerance;
+    RSDK::wallAngleTolerance       = wallAngleTolerance;
+    RSDK::roofAngleTolerance       = roofAngleTolerance;
+}
+
+// Like Hitbox, but as fixed point values
+struct HitboxFP {
+    int32 left;
+    int32 top;
+    int32 right;
+    int32 bottom;
+};
+
+inline void GetOrientedHitboxFP(HitboxFP *hitboxDst, Entity *entity, Hitbox *hitbox)
+{
+    switch (entity->direction) {
+        case FLIP_NONE:
+            hitboxDst->left   = TO_FIXED(hitbox->left);
+            hitboxDst->top    = TO_FIXED(hitbox->top);
+            hitboxDst->right  = TO_FIXED(hitbox->right);
+            hitboxDst->bottom = TO_FIXED(hitbox->bottom);
+            break;
+
+        case FLIP_X:
+            hitboxDst->left   = -TO_FIXED(hitbox->right);
+            hitboxDst->top    =  TO_FIXED(hitbox->top);
+            hitboxDst->right  = -TO_FIXED(hitbox->left);
+            hitboxDst->bottom =  TO_FIXED(hitbox->bottom);
+            break;
+
+        case FLIP_Y:
+            hitboxDst->left   =  TO_FIXED(hitbox->left);
+            hitboxDst->top    = -TO_FIXED(hitbox->bottom);
+            hitboxDst->right  =  TO_FIXED(hitbox->right);
+            hitboxDst->bottom = -TO_FIXED(hitbox->top);
+            break;
+
+        case FLIP_XY:
+            hitboxDst->left   = -TO_FIXED(hitbox->right);
+            hitboxDst->top    = -TO_FIXED(hitbox->bottom);
+            hitboxDst->right  = -TO_FIXED(hitbox->left);
+            hitboxDst->bottom = -TO_FIXED(hitbox->top);
+            break;
+    }
 }
 #endif
 
@@ -97,32 +138,7 @@ inline void GetCollisionInfo(CollisionMask **masks, TileInfo **tiles)
 #endif
 
 bool32 CheckObjectCollisionTouch(Entity *thisEntity, Hitbox *thisHitbox, Entity *otherEntity, Hitbox *otherHitbox);
-inline bool32 CheckObjectCollisionCircle(Entity *thisEntity, int32 thisRadius, Entity *otherEntity, int32 otherRadius)
-{
-    int32 x = FROM_FIXED(thisEntity->position.x - otherEntity->position.x);
-    int32 y = FROM_FIXED(thisEntity->position.y - otherEntity->position.y);
-    int32 r = FROM_FIXED(thisRadius + otherRadius);
-
-#if !RETRO_USE_ORIGINAL_CODE
-    if (showHitboxes) {
-        bool32 collided = x * x + y * y < r * r;
-        Hitbox thisHitbox;
-        Hitbox otherHitbox;
-        thisHitbox.left  = thisRadius >> 16;
-        otherHitbox.left = otherRadius >> 16;
-
-        int32 thisHitboxID  = AddDebugHitbox(H_TYPE_CIRCLE, FLIP_NONE, thisEntity, &thisHitbox);
-        int32 otherHitboxID = AddDebugHitbox(H_TYPE_CIRCLE, FLIP_NONE, otherEntity, &otherHitbox);
-
-        if (thisHitboxID >= 0 && collided)
-            debugHitboxList[thisHitboxID].collision |= 1 << (collided - 1);
-        if (otherHitboxID >= 0 && collided)
-            debugHitboxList[otherHitboxID].collision |= 1 << (collided - 1);
-    }
-#endif
-
-    return x * x + y * y < r * r;
-}
+bool32 CheckObjectCollisionCircle(Entity *thisEntity, int32 thisRadius, Entity *otherEntity, int32 otherRadius);
 uint8 CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Entity *otherEntity, Hitbox *otherHitbox, bool32 setValues);
 bool32 CheckObjectCollisionPlatform(Entity *thisEntity, Hitbox *thisHitbox, Entity *otherEntity, Hitbox *otherHitbox, bool32 setValues);
 

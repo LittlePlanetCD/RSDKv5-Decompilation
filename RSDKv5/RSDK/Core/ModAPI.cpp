@@ -1676,6 +1676,12 @@ void SuperInternal(RSDK::ObjectClass *super, RSDK::ModSuper callback, void *data
             if (super->stageLoad)
                 super->stageLoad();
             break;
+#if RETRO_REV0U
+        case SUPER_STATICLOAD:
+            if (super->staticLoad)
+                super->staticLoad((Object *)data);
+            break;
+#endif
 
         case SUPER_EDITORLOAD:
             if (super->editorLoad)
@@ -1847,8 +1853,7 @@ void RSDK::ModRegisterObject_STD(Object **staticVars, Object **modStaticVars, co
         if (!create)       info->create       = [curMod, info](void* data)          { currentMod = curMod; SuperInternal(info, SUPER_CREATE, data);            currentMod = NULL; };
         if (!stageLoad)    info->stageLoad    = [curMod, info]()                    { currentMod = curMod; SuperInternal(info, SUPER_STAGELOAD, NULL);         currentMod = NULL; };
 #if RETRO_REV0U
-        // Don't inherit staticLoad, that should be per-struct
-        // if (!staticLoad)   info->staticLoad   = [curMod, info](Object *staticVars)  { currentMod = curMod; SuperInternal(info, SUPER_STATICLOAD, staticVars);  currentMod = NULL; };
+        if (!staticLoad)   info->staticLoad   = [curMod, info](Object *staticVars)  { currentMod = curMod; SuperInternal(info, SUPER_STATICLOAD, staticVars);  currentMod = NULL; };
 #endif
         if (!editorLoad)   info->editorLoad   = [curMod, info]()                    { currentMod = curMod; SuperInternal(info, SUPER_EDITORLOAD, NULL);        currentMod = NULL; };
         if (!editorDraw)   info->editorDraw   = [curMod, info]()                    { currentMod = curMod; SuperInternal(info, SUPER_EDITORDRAW, NULL);        currentMod = NULL; };
@@ -2278,7 +2283,7 @@ void RSDK::LoadPaletteLegacy(uint8 bankID, const char *filename, int32 startDstI
 
 // Audio
 
-void RSDK::GetChannelAttributes(uint8 channel, float *volume, float *panning, float *speed)
+void RSDK::GetChannelAttributes(int32 channel, float *volume, float *panning, float *speed)
 {
     if (channel < CHANNEL_COUNT) {
         if (volume)
