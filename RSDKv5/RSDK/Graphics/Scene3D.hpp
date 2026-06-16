@@ -142,7 +142,7 @@ void MatrixRotateY(Matrix *matrix, int32 angle);
 void MatrixRotateZ(Matrix *matrix, int32 angle);
 void MatrixRotateXYZ(Matrix *matrix, int32 rotationX, int32 rotationY, int32 rotationZ);
 void MatrixInverse(Matrix *dest, Matrix *matrix);
-inline void MatrixCopy(Matrix *matDst, Matrix *matSrc) { memcpy(matDst, matSrc, sizeof(Matrix)); }
+void MatrixTranspose(Matrix *matDst, Matrix *matSrc);
 
 uint16 LoadMesh(const char *filepath, uint8 scope);
 uint16 Create3DScene(const char *name, uint16 faceCnt, uint8 scope);
@@ -153,11 +153,6 @@ inline void Prepare3DScene(uint16 sceneID)
 
         scn->vertexCount = 0;
         scn->faceCount   = 0;
-		// Disable for performance on Android 5.0.1. use code commenting
-        memset(scn->vertices, 0, sizeof(Scene3DVertex) * scn->vertLimit);
-        memset(scn->normals, 0, sizeof(Scene3DVertex) * scn->vertLimit);
-        memset(scn->faceVertCounts, 0, sizeof(uint8) * scn->vertLimit);
-        memset(scn->faceBuffer, 0, sizeof(Scene3DFace) * scn->vertLimit);
     }
 }
 

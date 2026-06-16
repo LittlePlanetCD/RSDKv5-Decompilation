@@ -30,8 +30,8 @@ CollisionSensor RSDK::sensors[6];
 #if RETRO_REV0U
 int32 RSDK::collisionMinimumDistance = TO_FIXED(24);
 
-uint8 RSDK::lowCollisionTolerance  = 8;
-uint8 RSDK::highCollisionTolerance = 14;
+int32 RSDK::lowCollisionTolerance  = 8;
+int32 RSDK::highCollisionTolerance = 14;
 
 uint8 RSDK::floorAngleTolerance = 0x20;
 uint8 RSDK::wallAngleTolerance  = 0x20;
@@ -196,30 +196,57 @@ void RSDK::CopyCollisionMask(uint16 dst, uint16 src, uint8 cPlane, uint8 cMode)
 }
 #endif
 
+// Edits hitbox in-place based on entity->direction's flip values
+#define FlipHitbox(entity, hitbox)                      \
+{                                                       \
+    int16 store;                                        \
+    switch (entity->direction) {                        \
+        case FLIP_X:                                    \
+            store         = -hitbox->left;              \
+            hitbox->left  = -hitbox->right;             \
+            hitbox->right =  store;                     \
+            break;                                      \
+                                                        \
+        case FLIP_Y:                                    \
+            store          = -hitbox->top;              \
+            hitbox->top    = -hitbox->bottom;           \
+            hitbox->bottom =  store;                    \
+            break;                                      \
+                                                        \
+        case FLIP_XY:                                   \
+            store          = -hitbox->left;             \
+            hitbox->left   = -hitbox->right;            \
+            hitbox->right  =  store;                    \
+            store          = -hitbox->top;              \
+            hitbox->top    = -hitbox->bottom;           \
+            hitbox->bottom =  store;                    \
+            break;                                      \
+    }                                                   \
+}
+
 bool32 RSDK::CheckObjectCollisionTouch(Entity *thisEntity, Hitbox *thisHitbox, Entity *otherEntity, Hitbox *otherHitbox)
 {
-    int32 store = 0;
     if (!thisEntity || !otherEntity || !thisHitbox || !otherHitbox)
         return false;
 
-    if ((thisEntity->direction & FLIP_X) == FLIP_X) {
-        store             = -thisHitbox->left;
-        thisHitbox->left  = -thisHitbox->right;
-        thisHitbox->right = store;
+#if RETRO_REV0U
+    HitboxFP thisHitboxFP;
+    HitboxFP otherHitboxFP;
 
-        store              = -otherHitbox->left;
-        otherHitbox->left  = -otherHitbox->right;
-        otherHitbox->right = store;
-    }
-    if ((thisEntity->direction & FLIP_Y) == FLIP_Y) {
-        store              = -thisHitbox->top;
-        thisHitbox->top    = -thisHitbox->bottom;
-        thisHitbox->bottom = store;
+    GetOrientedHitboxFP(&thisHitboxFP, thisEntity, thisHitbox);
+    GetOrientedHitboxFP(&otherHitboxFP, otherEntity, otherHitbox);
 
-        store               = -otherHitbox->top;
-        otherHitbox->top    = -otherHitbox->bottom;
-        otherHitbox->bottom = store;
-    }
+    int32 thisX  = thisEntity->position.x;
+    int32 thisY  = thisEntity->position.y;
+    int32 otherX = otherEntity->position.x;
+    int32 otherY = otherEntity->position.y;
+
+    bool32 collided = thisX + thisHitboxFP.left < otherX + otherHitboxFP.right && thisX + thisHitboxFP.right > otherX + otherHitboxFP.left
+                      && thisY + thisHitboxFP.top < otherY + otherHitboxFP.bottom && thisY + thisHitboxFP.bottom > otherY + otherHitboxFP.top;
+#else
+    // Bug details: v5 uses the first entity's direction to determine both hitboxes' orientation's flip values
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(thisEntity, otherHitbox);
 
     int32 thisIX  = FROM_FIXED(thisEntity->position.x);
     int32 thisIY  = FROM_FIXED(thisEntity->position.y);
@@ -229,24 +256,10 @@ bool32 RSDK::CheckObjectCollisionTouch(Entity *thisEntity, Hitbox *thisHitbox, E
     bool32 collided = thisIX + thisHitbox->left < otherIX + otherHitbox->right && thisIX + thisHitbox->right > otherIX + otherHitbox->left
                       && thisIY + thisHitbox->top < otherIY + otherHitbox->bottom && thisIY + thisHitbox->bottom > otherIY + otherHitbox->top;
 
-    if ((thisEntity->direction & FLIP_X) == FLIP_X) {
-        store             = -thisHitbox->left;
-        thisHitbox->left  = -thisHitbox->right;
-        thisHitbox->right = store;
-
-        store              = -otherHitbox->left;
-        otherHitbox->left  = -otherHitbox->right;
-        otherHitbox->right = store;
-    }
-    if ((thisEntity->direction & FLIP_Y) == FLIP_Y) {
-        store              = -thisHitbox->top;
-        thisHitbox->top    = -thisHitbox->bottom;
-        thisHitbox->bottom = store;
-
-        store               = -otherHitbox->top;
-        otherHitbox->top    = -otherHitbox->bottom;
-        otherHitbox->bottom = store;
-    }
+    // Flip them again to restore their original values
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(thisEntity, otherHitbox);
+#endif
 
 #if !RETRO_USE_ORIGINAL_CODE
     if (showHitboxes) {
@@ -263,53 +276,134 @@ bool32 RSDK::CheckObjectCollisionTouch(Entity *thisEntity, Hitbox *thisHitbox, E
     return collided;
 }
 
+bool32 RSDK::CheckObjectCollisionCircle(Entity *thisEntity, int32 thisRadius, Entity *otherEntity, int32 otherRadius)
+{
+    int32 x = FROM_FIXED(thisEntity->position.x - otherEntity->position.x);
+    int32 y = FROM_FIXED(thisEntity->position.y - otherEntity->position.y);
+    int32 r = FROM_FIXED(thisRadius + otherRadius);
+
+#if !RETRO_USE_ORIGINAL_CODE
+    if (showHitboxes) {
+        bool32 collided = x * x + y * y < r * r;
+        Hitbox thisHitbox;
+        Hitbox otherHitbox;
+        thisHitbox.left  = thisRadius >> 16;
+        otherHitbox.left = otherRadius >> 16;
+
+        int32 thisHitboxID  = AddDebugHitbox(H_TYPE_CIRCLE, FLIP_NONE, thisEntity, &thisHitbox);
+        int32 otherHitboxID = AddDebugHitbox(H_TYPE_CIRCLE, FLIP_NONE, otherEntity, &otherHitbox);
+
+        if (thisHitboxID >= 0 && collided)
+            debugHitboxList[thisHitboxID].collision |= 1 << (collided - 1);
+        if (otherHitboxID >= 0 && collided)
+            debugHitboxList[otherHitboxID].collision |= 1 << (collided - 1);
+    }
+#endif
+
+    return x * x + y * y < r * r;
+}
+
 uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Entity *otherEntity, Hitbox *otherHitbox, bool32 setValues)
 {
     if (!thisEntity || !otherEntity || !thisHitbox || !otherHitbox)
         return C_NONE;
+
+    uint8 side = C_NONE;
+
+#if RETRO_REV0U
+    HitboxFP thisHitboxFP;
+    HitboxFP otherHitboxFP;
+
+    GetOrientedHitboxFP(&thisHitboxFP, thisEntity, thisHitbox);
+    GetOrientedHitboxFP(&otherHitboxFP, otherEntity, otherHitbox);
+
+    int32 thisX  = thisEntity->position.x;
+    int32 thisY  = thisEntity->position.y;
+    int32 otherX = otherEntity->position.x;
+    int32 otherY = otherEntity->position.y;
+    int32 centerH;
+    int32 centerV;
+
+    int32 tmpA;
+    int32 tmpB;
+
+    if ((thisX + thisHitboxFP.right >= otherX + otherHitboxFP.left) && (otherX + otherHitboxFP.right >= thisX + thisHitboxFP.left)
+        && (thisY + thisHitboxFP.bottom >= otherY + otherHitboxFP.top) && (otherY + otherHitboxFP.bottom >= thisY + thisHitboxFP.top)) {
+
+        centerH = ((thisHitboxFP.left + thisHitboxFP.right) >> 1) + thisX;
+        centerV = ((thisHitboxFP.top + thisHitboxFP.bottom) >> 1) + thisY;
+
+        if (otherX < centerH) {
+            tmpB = ((otherX - thisX) - thisHitboxFP.left) + otherHitboxFP.right;
+            if (tmpB < 0) {
+                tmpB = ((thisX - otherX) - otherHitboxFP.right) + thisHitboxFP.left;
+            }
+            if (otherY < centerV) {
+                tmpA = ((otherY - thisY) - thisHitboxFP.top) + otherHitboxFP.bottom;
+                if (tmpA < 0) {
+                    tmpA = ((thisY - otherY) - otherHitboxFP.bottom) + thisHitboxFP.top;
+                }
+                side = (tmpB < tmpA) ? C_LEFT : C_TOP;
+            } else {
+                tmpA = ((otherY - thisY) - thisHitboxFP.bottom) + otherHitboxFP.top;
+                if (tmpA < 0) {
+                    tmpA = ((thisY - otherY) - otherHitboxFP.top) + thisHitboxFP.bottom;
+                }
+                side = (tmpB < tmpA) ? C_LEFT : C_BOTTOM;
+            }
+        }
+        else {
+            tmpB = ((otherX - thisX) - thisHitboxFP.right) + otherHitboxFP.left;
+            if (tmpB < 0) {
+                tmpB = ((thisX - otherX) - otherHitboxFP.left) + thisHitboxFP.right;
+            }
+            if (otherY < centerV) {
+                tmpA = ((otherY - thisY) - thisHitboxFP.top) + otherHitboxFP.bottom;
+                if (tmpA < 0) {
+                    tmpA = ((thisY - otherY) - otherHitboxFP.bottom) + thisHitboxFP.top;
+                }
+                side = (tmpA <= tmpB) ? C_TOP : C_RIGHT;
+            }
+            else {
+                tmpA = ((otherY - thisY) - thisHitboxFP.bottom) + otherHitboxFP.top;
+                if (tmpA < 0) {
+                    tmpA = ((thisY - otherY) - otherHitboxFP.top) + thisHitboxFP.bottom;
+                }
+                side = (tmpA <= tmpB) ? C_BOTTOM : C_RIGHT;
+            }
+        }
+
+        if (side == C_TOP || side == C_BOTTOM) {
+            tmpA = centerH - otherX;
+            if (otherX - centerH > - 1) {
+                tmpA = otherX - centerH;
+            }
+            if (((((otherHitboxFP.right - thisHitboxFP.left) - otherHitboxFP.left) + thisHitboxFP.right) >> 1) - TO_FIXED(4) < tmpA) {
+                side = C_NONE;
+            }
+        }
+
+        if (side == C_LEFT || side == C_RIGHT) {
+            tmpB = centerV - otherY;
+            if (otherY - centerV > - 1) {
+                tmpB = otherY - centerV;
+            }
+            if (((((otherHitboxFP.bottom - thisHitboxFP.top) - otherHitboxFP.top) + thisHitboxFP.bottom) >> 1) - TO_FIXED(4) <= tmpB) {
+                side = C_NONE;
+            }
+        }
+    }
+
+#else
+
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(thisEntity, otherHitbox);
 
     int32 collisionSideH = C_NONE;
     int32 collisionSideV = C_NONE;
 
     int32 collideX = otherEntity->position.x;
     int32 collideY = otherEntity->position.y;
-#if RETRO_REV0U
-    int32 store;
-#endif
-
-    if ((thisEntity->direction & FLIP_X) == FLIP_X) {
-#if RETRO_REV0U
-        store             = -thisHitbox->left;
-#else
-        int32 store       = -thisHitbox->left;
-#endif
-        thisHitbox->left  = -thisHitbox->right;
-        thisHitbox->right = store;
-#if RETRO_REV0U       
-    }
-    if ((otherEntity->direction & FLIP_X) == FLIP_X) {
-#endif
-        store              = -otherHitbox->left;
-        otherHitbox->left  = -otherHitbox->right;
-        otherHitbox->right = store;
-    }
-
-    if ((thisEntity->direction & FLIP_Y) == FLIP_Y) {
-#if RETRO_REV0U
-        store              = -thisHitbox->top;
-#else
-        int32 store        = -thisHitbox->top;
-#endif
-        thisHitbox->top    = -thisHitbox->bottom;
-        thisHitbox->bottom = store;
-#if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_Y) == FLIP_Y) {
-#endif
-        store               = -otherHitbox->top;
-        otherHitbox->top    = -otherHitbox->bottom;
-        otherHitbox->bottom = store;
-    }
 
     int32 thisIX  = FROM_FIXED(thisEntity->position.x);
     int32 thisIY  = FROM_FIXED(thisEntity->position.y);
@@ -327,7 +421,7 @@ uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Enti
         }
     }
     else {
-        if (otherIX + otherHitbox->left <= thisIX + thisHitbox->right && thisIY + thisHitbox->top < otherIY + otherHitbox->bottom
+        if (otherIX + otherHitbox->left < thisIX + thisHitbox->right && thisIY + thisHitbox->top < otherIY + otherHitbox->bottom
             && thisIY + thisHitbox->bottom > otherIY + otherHitbox->top) {
             collisionSideH = C_RIGHT;
             collideX       = thisEntity->position.x + TO_FIXED(thisHitbox->right - otherHitbox->left);
@@ -347,56 +441,18 @@ uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Enti
         }
     }
     else {
-#if RETRO_REV0U
-        if (otherIY + otherHitbox->top <= thisIY + thisHitbox->bottom && thisIX + thisHitbox->left < otherIX + otherHitbox->right) {
-#else
-        if (otherIY + otherHitbox->top < thisIY + thisHitbox->bottom && thisIX + thisHitbox->left < otherIX + otherHitbox->right) {
-#endif
-            if (otherIX + otherHitbox->left < thisIX + thisHitbox->right) {
-                collisionSideV = C_BOTTOM;
-                collideY       = thisEntity->position.y + TO_FIXED(thisHitbox->bottom - otherHitbox->top);
-            }
+        if (otherIY + otherHitbox->top < thisIY + thisHitbox->bottom && thisIX + thisHitbox->left < otherIX + otherHitbox->right
+            && otherIX + otherHitbox->left < thisIX + thisHitbox->right) {
+            collisionSideV = C_BOTTOM;
+            collideY       = thisEntity->position.y + TO_FIXED(thisHitbox->bottom - otherHitbox->top);
         }
     }
 
     otherHitbox->left--;
     otherHitbox->right++;
 
-    if ((thisEntity->direction & FLIP_X) == FLIP_X) {
-#if RETRO_REV0U
-        store             = -thisHitbox->left;
-#else
-        int32 store       = -thisHitbox->left;
-#endif
-        thisHitbox->left  = -thisHitbox->right;
-        thisHitbox->right = store;
-#if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_X) == FLIP_X) {
-#endif
-        store              = -otherHitbox->left;
-        otherHitbox->left  = -otherHitbox->right;
-        otherHitbox->right = store;
-    }
-
-    if ((thisEntity->direction & FLIP_Y) == FLIP_Y) {
-#if RETRO_REV0U
-        store              = -thisHitbox->top;
-#else
-        int32 store        = -thisHitbox->top;
-#endif
-        thisHitbox->top    = -thisHitbox->bottom;
-        thisHitbox->bottom = store;
-#if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_Y) == FLIP_Y) {
-#endif
-        store               = -otherHitbox->top;
-        otherHitbox->top    = -otherHitbox->bottom;
-        otherHitbox->bottom = store;
-    }
-
-    uint8 side = C_NONE;
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(thisEntity, otherHitbox);
 
     int32 cx = FROM_FIXED(collideX - otherEntity->position.x);
     int32 cy = FROM_FIXED(collideY - otherEntity->position.y);
@@ -407,20 +463,27 @@ uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Enti
         side = collisionSideH;
     }
 
+#endif
+
     if (setValues) {
         int32 velX = 0;
+        int32 tmp;
         switch (side) {
             default:
             case C_NONE: break;
 
             case C_TOP:
+#if RETRO_REV0U
+                otherEntity->position.y = (thisEntity->position.y - otherHitboxFP.bottom) + thisHitboxFP.top;
+#else
                 otherEntity->position.y = collideY;
+#endif
 
                 if (otherEntity->velocity.y > 0)
                     otherEntity->velocity.y = 0;
 
 #if RETRO_REV0U
-                if (otherEntity->tileCollisions != TILECOLLISION_UP) {
+                if (otherEntity->tileCollisions == TILECOLLISION_DOWN) {
 #endif
                     if (!otherEntity->onGround && otherEntity->velocity.y >= 0) {
                         otherEntity->groundVel = otherEntity->velocity.x;
@@ -433,7 +496,11 @@ uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Enti
                 break;
 
             case C_LEFT:
+#if RETRO_REV0U
+                otherEntity->position.x = (thisEntity->position.x - otherHitboxFP.right) + thisHitboxFP.left;
+#else
                 otherEntity->position.x = collideX;
+#endif
 
                 velX = otherEntity->velocity.x;
                 if (otherEntity->onGround) {
@@ -450,7 +517,13 @@ uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Enti
                 break;
 
             case C_RIGHT:
-                otherEntity->position.x = collideX | 0xFFFF;
+#if RETRO_REV0U
+                tmp = (thisEntity->position.x - otherHitboxFP.left) + thisHitboxFP.right;
+                if (otherEntity->position.x < tmp)
+                    otherEntity->position.x = tmp;
+#else
+                otherEntity->position.x = collideX;
+#endif
 
                 velX = otherEntity->velocity.x;
                 if (otherEntity->onGround) {
@@ -467,7 +540,11 @@ uint8 RSDK::CheckObjectCollisionBox(Entity *thisEntity, Hitbox *thisHitbox, Enti
                 break;
 
             case C_BOTTOM:
+#if RETRO_REV0U
+                otherEntity->position.y = (thisEntity->position.y - otherHitboxFP.top) + thisHitboxFP.bottom;
+#else
                 otherEntity->position.y = collideY;
+#endif
 
                 if (otherEntity->velocity.y < 0)
                     otherEntity->velocity.y = 0;
@@ -519,31 +596,14 @@ bool32 RSDK::CheckObjectCollisionPlatform(Entity *thisEntity, Hitbox *thisHitbox
     if (!thisEntity || !otherEntity || !thisHitbox || !otherHitbox)
         return false;
 
-    if ((thisEntity->direction & FLIP_X) == FLIP_X) {
-        store             = -thisHitbox->left;
-        thisHitbox->left  = -thisHitbox->right;
-        thisHitbox->right = store;
 #if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_X) == FLIP_X) {
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(otherEntity, otherHitbox);
+#else
+    // Bug details: v5 uses the first entity's direction to determine both hitboxes' orientation's flip values
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(thisEntity, otherHitbox);
 #endif
-        store              = -otherHitbox->left;
-        otherHitbox->left  = -otherHitbox->right;
-        otherHitbox->right = store;
-    }
-
-    if ((thisEntity->direction & FLIP_Y) == FLIP_Y) {
-        store              = -thisHitbox->top;
-        thisHitbox->top    = -thisHitbox->bottom;
-        thisHitbox->bottom = store;
-#if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_Y) == FLIP_Y) {
-#endif
-        store               = -otherHitbox->top;
-        otherHitbox->top    = -otherHitbox->bottom;
-        otherHitbox->bottom = store;
-    }
 
     int32 thisIX  = FROM_FIXED(thisEntity->position.x);
     int32 thisIY  = FROM_FIXED(thisEntity->position.y);
@@ -553,14 +613,14 @@ bool32 RSDK::CheckObjectCollisionPlatform(Entity *thisEntity, Hitbox *thisHitbox
     int32 otherMoveY = FROM_FIXED(otherEntity->position.y - otherEntity->velocity.y);
 
 #if RETRO_REV0U
-    if (otherEntity->tileCollisions != TILECOLLISION_DOWN) {	
-        if (otherMoveY - otherHitbox->bottom >= thisIY + -thisHitbox->bottom
-            && otherIY - otherHitbox->bottom <= thisIY + -thisHitbox->top
+    if (otherEntity->tileCollisions != TILECOLLISION_DOWN) {
+        if (otherMoveY - otherHitbox->bottom >= thisIY - thisHitbox->bottom
+            && otherIY - otherHitbox->bottom <= thisIY - thisHitbox->top
             && thisIX + thisHitbox->left < otherIX + otherHitbox->right
             && thisIX + thisHitbox->right > otherIX + otherHitbox->left
             && otherEntity->velocity.y <= 0) {
 
-            otherEntity->position.y = thisEntity->position.y + TO_FIXED(-thisHitbox->top + otherHitbox->bottom);
+            otherEntity->position.y = thisEntity->position.y + TO_FIXED(otherHitbox->bottom - thisHitbox->top);
 
             if (setValues) {
                 otherEntity->velocity.y = 0;
@@ -599,31 +659,15 @@ bool32 RSDK::CheckObjectCollisionPlatform(Entity *thisEntity, Hitbox *thisHitbox
     }
 #endif
 
-    if ((thisEntity->direction & FLIP_X) == FLIP_X) {
-        store             = -thisHitbox->left;
-        thisHitbox->left  = -thisHitbox->right;
-        thisHitbox->right = store;
-#if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_X) == FLIP_X) {
-#endif
-        store              = -otherHitbox->left;
-        otherHitbox->left  = -otherHitbox->right;
-        otherHitbox->right = store;
-    }
 
-    if ((thisEntity->direction & FLIP_Y) == FLIP_Y) {
-        store              = -thisHitbox->top;
-        thisHitbox->top    = -thisHitbox->bottom;
-        thisHitbox->bottom = store;
 #if RETRO_REV0U
-    }
-    if ((otherEntity->direction & FLIP_Y) == FLIP_Y) {
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(otherEntity, otherHitbox);
+#else
+    // Bug details: v5 uses the first entity's direction to determine both hitboxes' orientation's flip values
+    FlipHitbox(thisEntity, thisHitbox);
+    FlipHitbox(thisEntity, otherHitbox);
 #endif
-        store               = -otherHitbox->top;
-        otherHitbox->top    = -otherHitbox->bottom;
-        otherHitbox->bottom = store;
-    }
 
 #if !RETRO_USE_ORIGINAL_CODE
     if (showHitboxes) {
@@ -2126,7 +2170,7 @@ void RSDK::ProcessPathGrip()
 }
 
 void RSDK::SetPathGripSensors(CollisionSensor *sensors)
-{   
+{
     int32 offset = 0;
 #if RETRO_REV0U
     offset = useCollisionOffset ? COLLISION_OFFSET : 0;

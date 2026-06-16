@@ -84,8 +84,8 @@ uint16 RSDK::LoadSpriteAnimation(const char *filePath, uint8 scope)
             animation->loopIndex       = ReadInt8(&info);
             animation->rotationStyle   = ReadInt8(&info);
 
-            //if (animation->frameListOffset + animation->loopIndex >= frameCount) // old workaround to fix an S3 bug, dont use anymore
-            //    animation->loopIndex = animation->frameCount - 1;
+            if (animation->frameListOffset + animation->loopIndex >= frameCount) // old workaround to fix an S3 bug, dont use anymore
+                animation->loopIndex = animation->frameCount - 1;
 
             for (int32 f = 0; f < animation->frameCount; ++f) {
                 SpriteFrame *frame = &spr->frames[frameID++];
@@ -99,9 +99,6 @@ uint16 RSDK::LoadSpriteAnimation(const char *filePath, uint8 scope)
                 frame->height      = ReadInt16(&info);
                 frame->pivotX      = ReadInt16(&info);
                 frame->pivotY      = ReadInt16(&info);
-#if !RETRO_REV0U
-                frame->hitboxCount = hitboxCount;
-#endif
                 for (int32 h = 0; h < hitboxCount; ++h) {
                     frame->hitboxes[h].left   = ReadInt16(&info);
                     frame->hitboxes[h].top    = ReadInt16(&info);
