@@ -8,7 +8,7 @@ int32 RSDK::Legacy::AddGraphicsFile(const char *filePath)
 
     int32 sheetID = 0;
     while (StrLength(gfxSurface[sheetID].fileName) > 0) {
-        if (StrComp(gfxSurface[sheetID].fileName, sheetPath))
+        if (StrComp(gfxSurface[sheetID].fileName, filePath))
             return sheetID;
         if (++sheetID == LEGACY_SURFACE_COUNT)
             return 0;
